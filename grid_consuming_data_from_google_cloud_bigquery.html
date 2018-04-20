@@ -1,0 +1,158 @@
+
+<link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.common.min.css">
+<link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.default.min.css">
+
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://kendo.cdn.telerik.com/2018.1.221/js/kendo.all.min.js"></script>
+
+<script>
+
+  var client_id = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com';
+  var project_id = 'XXXXXXXXXXXXXXXXXXXXXXX';
+
+
+ function execute() {
+$("#grid").kendoGrid({
+    toolbar: ["create"],
+    columns: [
+
+   		{ field: "productid", title: "ProductID",  width: "100px", editable: function (dataItem) {
+          return dataItem.isNew();
+      }  },
+      { field: "productname", title: "ProductName",  width: "200px" },
+      { field: "unitsinstock", title: "UnitsInStock",  width: "120px" },
+      { field: "unitprice", title: "UnitPrice", format: "{0:c}",  width: "120px" },
+      { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }],
+    editable: "inline",
+    dataSource: {
+      sort: {field: "productid", dir: "asc"},
+        transport: {
+            read: function(options) {
+                return gapi.client.bigquery.jobs.query({
+                                'projectId': project_id,
+                                'query': 'SELECT * FROM KendoDS.products'
+                        })
+                            .then(function(response) {
+                                            var gridData = [];
+                                            $.each(response.result.rows, function(i, item) {
+                                                var productid = item.f[0].v;
+                                              	var productname = item.f[1].v;
+                                                var unitsinstock = item.f[6].v;
+                                                var unitprice = item.f[5].v;
+                                                gridData.push({
+                                                    productid: productid,
+                                                    productname: productname,
+                                                  	unitsinstock: unitsinstock,
+                                                    unitprice: unitprice
+                                                });
+                                            });
+                                            options.success(gridData)
+                                        },
+                                function(err) { console.error("Execute error", err); });
+            },
+            update: function(options){
+
+              var productid = options.data.productid;
+              var productname = '"'+ options.data.productname + '"';
+              var unitsinstock = options.data.unitsinstock;
+              var unitprice = options.data.unitprice;
+
+              return gapi.client.bigquery.jobs.query({
+                 			"projectId": project_id,
+                			"useLegacySql": false,
+                 			"query": "UPDATE KendoDS.products SET ProductName = "+ productname+" , UnitsInStock = "+  unitsinstock+", UnitPrice = "+ unitprice + " WHERE ProductID = "+ productid +";"
+
+                        })
+                            .then(function(response) {
+
+                                options.success(options.data);
+                                        },
+                                function(err) { console.error("Execute error", err); });
+
+
+            },
+            create: function(options){
+
+
+              var grid = $("#grid").data("kendoGrid");
+              var content = grid.element.find("tbody");
+             	var row = $(content).find('tr').last();
+              var dataItem = grid.dataItem(row);
+              debugger
+
+
+
+              var productid = dataItem.productid + 1;
+              var productname = '"'+ options.data.productname + '"';
+              var unitsinstock = options.data.unitsinstock;
+              var unitprice = options.data.unitprice;
+
+              return gapi.client.bigquery.jobs.query({
+                 			'projectId': project_id,
+                  		    "useLegacySql": false,
+                 			"query": "INSERT KendoDS.products (ProductID, ProductName, UnitsInStock, UnitPrice) VALUES("+ productid +", "+ productname+", "+  unitsinstock+", "+ unitprice + ");"
+
+                        })
+                            .then(function(response) {
+
+                                options.success(options.data);
+                                        },
+                                function(err) { console.error("Execute error", err); });
+
+
+
+            },
+            destroy: function(options){
+
+              var productid = options.data.productid;
+              return gapi.client.bigquery.jobs.query({
+                 			'projectId': project_id,
+                  		"useLegacySql": false,
+                 			'query': "DELETE KendoDS.products WHERE ProductID = "+ productid +";"
+                        })
+                            .then(function(response) {
+               									alert("item deleted")
+                                                   options.success(response)
+                                        },
+                                function(err) { console.error("Execute error", err); });
+
+            }
+          },
+      schema: {
+            model: {
+              id: "productid",
+              fields: {
+                productid: { editable: true, type: "number", nullable: true, defaultValue: -1 },
+                ProductName: { validation: { required: true } },
+                UnitPrice: { type: "number", validation: { required: true, min: 1} },
+                UnitsInStock: { type: "number", validation: { min: 0, required: true } }
+              }
+            }
+          }
+
+
+}
+})
+}
+
+
+function authenticate() {
+    return gapi.auth2.getAuthInstance()
+        .signIn({scope: "https://www.googleapis.com/auth/bigquery https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloud-platform.read-only"})
+        .then(function() { console.log("Sign-in successful"); },
+              function(err) { console.error("Error signing in", err); });
+  }
+  function loadClient() {
+    return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/bigquery/v2/rest")
+        .then(function() { console.log("GAPI client loaded for API"); },
+              function(err) { console.error("Error loading GAPI client for API", err); });
+  }
+  gapi.load("client:auth2", function() {
+    gapi.auth2.init({client_id: client_id});
+  });
+</script>
+
+<button class="k-button" onclick="authenticate().then(loadClient)">authorize and load</button>
+<button class="k-button" onclick="execute()">execute</button>
+<div id="grid"></div>

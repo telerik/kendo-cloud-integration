@@ -1,0 +1,124 @@
+﻿@model IEnumerable<todo.Models.Item>
+
+@{
+    ViewBag.Title = "List of To-Do Items";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>List of To-Do Items</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Description)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Category)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Completed)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Description)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Category)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Completed)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit", new { id=item.Id, category=item.Category }) |
+            @Html.ActionLink("Details", "Details", new { id=item.Id, category=item.Category }) |
+            @Html.ActionLink("Delete", "Delete", new { id=item.Id, category=item.Category })
+        </td>
+    </tr>
+}
+
+</table>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+
+
+
+@Html.AntiForgeryToken()
+
+
+
+<script type="text/javascript">
+    function sendAntiForgery() {
+        return { "__RequestVerificationToken": $('input[name=__RequestVerificationToken]').val() }
+    }
+</script>
+
+<div id="grid"></div>
+
+<script>
+   $("#grid").kendoGrid({
+       dataSource: {
+           transport: {
+               read: {
+                   url: "/Item/KendoRead/",
+                   dataType: "json"
+               },
+               update: {
+                   url: "/Item/KendoUpdate",
+                   dataType: "json"
+               },
+               destroy: {
+                   url: "/Item/KendoDestroy",
+                   dataType: "json"
+               },
+               create: {
+                   url: "/Item/KendoCreate",
+                   dataType: "json"
+               },
+               parameterMap: function (options, operation) {
+                   if (operation !== "read" && options.models) {
+                     return { models: kendo.stringify(options.models) };
+                 }
+               }
+           },
+           batch: true,
+           pageSize: 10,
+           schema: {
+               model: {
+                   id: "Id",
+                   fields: {
+                       Id: { type: "string", editable: false, nullable: true },
+                       Name: { validation: { required: true } },
+                       Description: { type: "string", required: true },
+                       Category: { type: "string", required: true },
+                       Completed: { type: "boolean" }
+                   }
+               }
+           }
+       },
+       pageable: true,
+       height: 500,
+       toolbar: ["create"],
+       columns: [
+           { field: "Name", title: "Task Name", width: "220px" },
+           { field: "Description", title: "Description", width: "120px" },
+           { field: "Category", title: "Category", width: "120px" },
+           { field: "Completed", title: "Completed", width: "120px" },
+           { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }],
+       editable: {
+           mode: "popup"
+       }
+   });
+</script>
+

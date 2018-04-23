@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Azure Functions in Kendo UI Grid</title>
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.common-bootstrap.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.bootstrap.mobile.min.css" />
+
+    <script src="https://kendo.cdn.telerik.com/2018.1.221/js/jquery.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2018.1.221/js/kendo.all.min.js"></script>
+  </head>
+  <body>
+  <div id="grid"></div>
+  <script>
+	$(document).ready(function () {          
+	  function customBoolEditor(container, options) {
+		var guid = kendo.guid();
+		$('<input class="k-checkbox" id="' + guid + '" type="checkbox" name="Discontinued" data-type="boolean" data-bind="checked:Discontinued">').appendTo(container);
+		$('<label class="k-checkbox-label" for="' + guid + '">&#8203;</label>').appendTo(container);
+	  }
+
+	  $("#grid").kendoGrid({
+		toolbar: ["create"],
+		columns: [
+		  { field:"ProductName", title: "Product Name", width: "150px" },
+		  { field: "UnitPrice", title:"Unit Price", format: "{0:c}", width: "110px" },
+		  { field: "UnitsInStock", title:"Units In Stock", width: "110px" },
+		  { field: "Discontinued", width: "110px", editor: customBoolEditor },
+		  { command: ["edit", "destroy"], title: "&nbsp;", width: "190px" }],
+		editable: "popup",
+		dataSource: {
+		  batch: false,
+		  transport: {
+          read: {
+            url: "[Read Function URL]",
+            method: "GET"
+          },
+          update: {
+            url: "[Update Function URL]",
+            method: "POST"
+          },
+          destroy: {
+            url: "[Destroy Function URL]",
+            method: "POST"
+          },
+          create: {
+            url: "[Create Function URL]",
+            method: "POST"
+          },
+          parameterMap: function(options, operation) {
+            if (operation !== "read" && options) {
+              return kendo.stringify(options);
+            }
+          }
+        },
+		  schema: {
+			model: {
+			  id: "RowKey",
+			  fields: {
+				RowKey: { editable: false, nullable: true },
+				ProductName: { validation: { required: true } },
+				UnitPrice: { type: "number", validation: { required: true, min: 1} },
+				Discontinued: { type: "boolean" },
+				UnitsInStock: { type: "number", validation: { min: 0, required: true } }
+			  }
+			}
+		  }
+		}
+	  });
+	});
+  </script>
+  </body>
+</html>

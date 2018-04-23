@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kendo Grid DynamoDB Integration</title>
+
+  <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.common.min.css">
+  <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.1.221/styles/kendo.default.min.css">
+
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.221.1.min.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.3.min.js"></script>
+  <script src="https://kendo.cdn.telerik.com/2018.1.221/js/kendo.all.min.js"></script>
+
+  <script>
+    AWS.config.update({
+      region: [DynamoDB app region],
+      endpoint: [DynamoDB app endpoint],
+      accessKeyId: [the user access key ID],
+      secretAccessKey: [the user secret access key]
+    });
+  </script>
+</head>
+<body>
+  <div id="grid"></div>
+  <button class="k-button" id="btn">Click to create 'Movies' table</button>
+  <script>
+    var dynamodb = new AWS.DynamoDB();
+    var docClient = new AWS.DynamoDB.DocumentClient();
+
+    function onRead(options) {
+      var params = {
+        TableName: "Movies"
+      };
+
+      docClient.scan(params, function(err, data) {
+        if (err) {
+          options.error(err);
+        } else {
+          options.success(data.Items);          
+        }
+      });
+    };
+
+    function onUpdate(options) {
+      var model = options.data;
+      model.release_date = model.release_date.toISOString();
+
+      var updateArray = [];
+      var updateArrtibutes = {};
+
+      for (var property in model) {
+        if (model.hasOwnProperty(property) && property != "id") {
+          updateArray.push(property + " = :" + property);
+          updateArrtibutes[":" + property] = model[property];
+        }
+      }
+
+      var updateExpression = "set " + updateArray.toString();
+
+      var params = {
+        TableName: "Movies",
+        Key:{
+          id: model.id
+        },
+        UpdateExpression: updateExpression,
+        ExpressionAttributeValues: updateArrtibutes,
+        ReturnValues:"ALL_NEW"
+      };
+	  
+      docClient.update(params, function(err, data) {
+        if (err) {
+          options.error(err);
+        } else {
+          options.success(data.Attributes);
+        }
+      });
+    }
+
+    function onCreate(options) {
+      var model = options.data;
+      model.id = kendo.guid();
+      model.release_date = model.release_date.toISOString();
+
+      var params = {
+        TableName: "Movies",
+        Item: model
+      };
+
+      docClient.put(params, function(err, data) {
+        if (err) {
+          options.error(err);
+        } else {
+          options.success(model);
+        }
+      });
+    }
+
+    function onDestroy(options) {
+      var model = options.data;
+
+      var params = {
+        TableName: "Movies",
+        Key:{
+          id: model.id
+        },
+        ReturnValues:"ALL_OLD"
+      };
+
+      docClient.delete(params, function(err, data) {
+        if (err) {
+          options.error(err);
+        } else {
+          options.success(data.Attributes);
+        }
+      });
+    }
+
+    $('#grid').kendoGrid({
+      editable: { mode: "popup" },
+      toolbar: ["create"],
+      height: 600,
+      columns: [
+        { field: "title", title: "Title", width: "15%" }, 
+        { field: "release_date", title: "Release", template: "#= kendo.toString(release_date, 'd') #", width: "8%"},
+        { field: "directors", title: "Directors", width: "10%"},
+        { field: "actors", title: "Actors", width: "17%"},
+        { field: "plot", title: "Plot", width: "34%"},
+        { command: [{ name: "edit" }, { name: "destroy" }] }
+      ],
+      dataSource: {
+        schema: {
+          model: {
+            id: "id",
+            fields: {
+              release_date: { type: "date", validation: { required: true } },
+              title: { type: "string", validation: { required: true } },
+              directors: { type: "string", validation: { required: true } },
+              actors: { type: "string", validation: { required: true } },
+              plot: { type: "string", validation: { required: true } }
+            }
+          }
+        },
+        transport: {
+          read: onRead,
+          create: onCreate,
+          update: onUpdate,
+          destroy: onDestroy
+        }
+      }
+    });
+  </script>
+</body>
+</html>

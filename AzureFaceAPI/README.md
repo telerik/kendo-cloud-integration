@@ -80,8 +80,7 @@ To successfully authenticate with the Face API service, peform the following sim
             "roll": -0.2,
             "yaw": -0.2
           }
-        },
-        ...
+        }
       }
     ]
     ```

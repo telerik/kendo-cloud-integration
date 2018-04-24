@@ -6,9 +6,13 @@ The Kendo UI widgets can be seamlessly itegrated with a cognitive service such a
 
 The below example demonstrates how files can be sent directly to the Azure Face API by using [the Kendo Upload's useArrayBuffer configuration option](https://docs.telerik.com/kendo-ui/api/javascript/ui/upload/configuration/async.usearraybuffer). In this way, the file is read with FileReader and the buffer data is then sent to the cloud service. In turn, the Face API analyzes the image, detects available faces and returns data in JSON format.
 
+## Prerequisites
+
+* [Create an Azure Account and subscribe to the FaceAPI service](https://azure.microsoft.com/en-us/services/cognitive-services/face/).
+
 ### Configuration
 
-2. To successfully authenticate with the Face API service, peform the following simple steps:
+To successfully authenticate with the Face API service, peform the following simple steps:
 
     * Copy the azure-faceapi-integration template.
     * Replace the `subscriptionKey` value with your valid subscription key that is obtained from Azure.

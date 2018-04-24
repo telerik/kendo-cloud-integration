@@ -13,94 +13,91 @@
   <script src="https://kendo.cdn.telerik.com/2018.1.221/js/angular.min.js"></script>
   <script src="https://kendo.cdn.telerik.com/2018.1.221/js/jszip.min.js"></script>
   <script src="https://kendo.cdn.telerik.com/2018.1.221/js/kendo.all.min.js"></script>
-
 </head>
 <body>
-	<h1 class="text-center text-primary">Integrating Kendo UI with Azure FaceAPI </h1>
-	<br />
-	<div class="row">
-		<input name="files" id="files" type="file" />
-	</div>
-	<br />
-	<div class="main-content row">
-		<div class="col-xs-12 col-md-6">
-			<h4 class="text-center">Image Preview:</h4>
-			<div id="imageContainer">
-				<img id="imagePreview" />
-			</div>
-		</div>
-		<div class="col-xs-12 col-md-6">
-			<h4 class="text-center">FaceAPI Response Data:</h4>
-			<textarea id="apiResponseData" class="k-textbox"></textarea>
-		</div>
-	</div>
+    <h1 class="text-center text-primary">Integrating Kendo UI with Azure FaceAPI </h1>
+    <br />
+    <div class="row">
+        <input name="files" id="files" type="file" />
+    </div>
+    <br />
+    <div class="main-content row">
+        <div class="col-xs-12 col-md-6">
+            <h4 class="text-center">Image Preview:</h4>
+            <div id="imageContainer">
+                <img id="imagePreview" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-6">
+            <h4 class="text-center">FaceAPI Response Data:</h4>
+            <textarea id="apiResponseData" class="k-textbox"></textarea>
+        </div>
+    </div>
 
+    <script>
+        $(document).ready(function () {
+            var uriBase = "subscriptionKeyLocationUrl";
+            var params = {
+                "returnFaceId": "true",
+                "returnFaceLandmarks": "false",
+                "returnFaceAttributes": "age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise",
+            };
+            var saveUrl = uriBase + "?" + $.param(params);
 
+            $("#files").kendoUpload({
+                async: {
+                    saveUrl: saveUrl,
+                    withCredentials: false,
+                    useArrayBuffer: true,
+                    multiple: false
+                },
+                success: onSuccess,
+                upload: onUpload,
+                showFileList: true,
+                localization: {
+                    select: "Select an image that contains a face"
+                },
+                validation: {
+                    allowedExtensions: [".png", ".jpg"],
+                    maxFileSize: 4194304
+                }
+            });
 
-<script>
-    $(document).ready(function () {
-        var uriBase = "subscriptionKeyLocationUrl";
-        var params = {
-            "returnFaceId": "true",
-            "returnFaceLandmarks": "false",
-            "returnFaceAttributes": "age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise",
-        };
-        var saveUrl = uriBase + "?" + $.param(params);
+            function onUpload(e) {
+                var xhr = e.XMLHttpRequest;
 
-        $("#files").kendoUpload({
-            async: {
-                saveUrl: saveUrl,
-                withCredentials: false,
-                useArrayBuffer: true,
-                multiple: false
-            },
-            success: onSuccess,
-            upload: onUpload,
-            showFileList: true,
-            localization: {
-                select: "Select an image that contains a face"
-            },
-            validation: {
-                allowedExtensions: [".png", ".jpg"],
-                maxFileSize: 4194304
+                if (xhr) {
+                    xhr.addEventListener("readystatechange", function (e) {
+                        if (xhr.readyState == 1) {
+                            xhr.setRequestHeader("Content-Type", "application/octet-stream");
+                            xhr.setRequestHeader("Ocp-Apim-Subscription-Key", "subscriptionKey");
+                        }
+                    });
+                }
             }
+
+            function onSuccess(e) {
+                var upload = e.sender;
+                var faceApiData = e.response;
+                var fileData = e.files[0].rawFile;
+
+                displayImage(fileData, "#imagePreview");
+                $("#apiResponseData").val(JSON.stringify(faceApiData, null, 2));
+            }
+
+            function displayImage(file, containerId) {
+                var fileReader = new FileReader();
+
+                fileReader.onload = function (event) {
+                    var image = event.target.result;
+                    var containerElement = $(containerId);
+
+                    containerElement.attr('src', image);
+                }
+                fileReader.readAsDataURL(file);
+            }
+
         });
-
-        function onUpload(e) {
-            var xhr = e.XMLHttpRequest;
-
-            if (xhr) {
-                xhr.addEventListener("readystatechange", function (e) {
-                    if (xhr.readyState == 1) {
-                        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-                        xhr.setRequestHeader("Ocp-Apim-Subscription-Key", "subscriptionKey");
-                    }
-                });
-            }
-        }
-
-        function onSuccess(e) {
-            var upload = e.sender;
-            var faceApiData = e.response;
-            var fileData = e.files[0].rawFile;
-
-            displayImage(fileData, "#imagePreview");
-            $("#apiResponseData").val(JSON.stringify(faceApiData, null, 2));
-        }
-
-        function displayImage(file, containerId) {
-            var fileReader = new FileReader();
-
-            fileReader.onload = function (event) {
-                var image = event.target.result;
-                var containerElement = $(containerId);
-
-                containerElement.attr('src', image);
-            }
-            fileReader.readAsDataURL(file);
-        }
-
-    });
-</script>
+    </script>
 </body>
 </html>

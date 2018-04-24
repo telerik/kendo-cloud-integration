@@ -14,9 +14,9 @@ The below example demonstrates how files can be sent directly to the Azure Face 
 
 To successfully authenticate with the Face API service, peform the following simple steps:
 
-    * Copy the azure-faceapi-integration template.
-    * Replace the `subscriptionKey` value with your valid subscription key that is obtained from Azure.
-    * Change the `uriBase` value to use the location where you obtained your subscription keys.
+* Copy the azure-faceapi-integration template.
+* Replace the `subscriptionKey` value with your valid subscription key that is obtained from Azure.
+* Change the `uriBase` value to use the location where you obtained your subscription keys.
 
 ## Breakdown of the implementation
 
